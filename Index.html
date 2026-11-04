@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wielowalutowy Kalkulator Podróży (EUR Base)</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkthbGt1bGF0b3IgUG9kcsOzxbx5IEVVUiIsCiAgInNob3J0X25hbWUiOiAiUG9kcsOzxbx5IEVVUiIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzI1NjNlYiIKfQ==">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-color); color: var(--text); margin: 0; padding: 15px; padding-bottom: 60px; }
+        h1, h2, h3 { margin-top: 0; color: #fff; }
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
+        input, select { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--card-border); color: #fff; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+        button { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        .stat-box { background: #0f172a; border-left: 4px solid var(--primary); padding: 12px; border-radius: 6px; margin-top: 10px; }
+        .stat-title { font-size: 0.8rem; color: var(--text-muted); }
+        .stat-val { font-size: 1.2rem; font-weight: bold; color: #fff; margin-top: 2px; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; color: white; }
+        .bg-success { background: var(--success); }
+        .bg-danger { background: var(--danger); }
+        .history-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding: 10px 0; }
+        .history-item:last-child { border-bottom: none; }
+        .btn-del { background: transparent; color: var(--danger); width: auto; padding: 4px 8px; font-size: 0.8rem; border: 1px solid var(--danger); border-radius: 4px; cursor: pointer; }
+        .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-muted); border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .helper-text { font-size: 0.75rem; color: var(--text-muted); margin-top: -6px; margin-bottom: 10px; }
+        .pln-sub { font-size: 0.8rem; color: #38bdf8; font-weight: normal; margin-left: 4px; }
+    </style>
+</head>
+<body>
+
+    <h2>🌍 Multi-Currency Travel Budget (EUR Base)</h2>
+
+    <!-- GŁÓWNE PODSUMOWANIE -->
+    <div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #3b82f6;">
+        <h3 style="margin-bottom: 6px; font-size: 1.1rem;">Podsumowanie Ogólne (Baza: EUR)</h3>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Pula startowa: <span id="total-budget-disp" style="color:#fff; font-weight:bold;">0</span> EUR</div>
+        <div style="font-size: 1.6rem; font-weight: bold; margin: 6px 0;" id="total-left-disp">Pozostało: 0 EUR</div>
+        <div class="grid-2" style="margin-top: 10px; font-size: 0.85rem; border-top: 1px solid var(--card-border); padding-top: 8px;">
+            <div>Wydano łącznie: <span id="total-spent-disp" style="font-weight:bold;">0</span> EUR</div>
+            <div>Przelicznik PLN: <span id="pln-equiv-disp" style="font-weight:bold; color: #38bdf8;">0</span> PLN</div>
+        </div>
+    </div>
+
+    <!-- ZAKŁADKI / NAWIGACJA -->
+    <div class="tab-bar">
+        <div class="tab-btn active" onclick="switchTab('dashboard')" id="btn-tab-dashboard">Dashboard</div>
+        <div class="tab-btn" onclick="switchTab('settings')" id="btn-tab-settings">Ustawienia</div>
+        <div class="tab-btn" onclick="switchTab('history')" id="btn-tab-history">Historia</div>
+    </div>
+
+    <!-- SEKCJA: DASHBOARD & DODAWANIE -->
+    <div id="tab-dashboard">
+        <!-- DZIENNE LIMITY -->
+        <div class="card">
+            <h3>Dzisiejsze Limity (Dzień <span id="current-day-num">1</span>)</h3>
+            <div id="category-stats"></div>
+        </div>
+
+        <!-- DODAWANIE WYDATKU -->
+        <div class="card">
+            <h3>Dodaj Wydatek (Wielowalutowy)</h3>
+            
+            <label>Kategoria</label>
+            <select id="exp-cat">
+                <option value="food">Jedzenie (pula stała)</option>
+                <option value="hotel">Hotele (pula stała)</option>
+                <option value="fun">Atrakcje (pula stała)</option>
+                <option value="transport">Transport (płynny)</option>
+                <option value="other">Inne / Dodatkowe (np. przed wyjazdem)</option>
+            </select>
+
+            <div class="grid-2">
+                <div>
+                    <label>Dzień wyjazdu (0 = Przed wyjazdem)</label>
+                    <input type="number" id="exp-day" value="1" min="0">
+                </div>
+                <div>
+                    <label>Waluta transakcji</label>
+                    <select id="exp-currency" onchange="toggleCurrencyFields()">
+                        <option value="EUR">EUR (€)</option>
+                        <option value="PLN">PLN (zł)</option>
+                        <option value="THB">THB (Tajlandia)</option>
+                        <option value="VND">VND (Wietnam)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="IDR">IDR (Indonezja)</option>
+                        <option value="LAK">LAK (Laos)</option>
+                        <option value="KHR">KHR (Kambodża)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Kwota w walucie oryginalnej</label>
+                    <input type="number" id="exp-amount-orig" placeholder="0.00" step="any" oninput="calcEurAuto()">
+                </div>
+                <div>
+                    <label id="eur-label">Koszt rzeczywisty w EUR *</label>
+                    <input type="number" id="exp-amount-eur" placeholder="0.00" step="0.01">
+                </div>
+            </div>
+            <div class="helper-text" id="eur-helper">* Podaj ile faktycznie zeszło z konta/Revoluta w EUR</div>
+
+            <label>Opis / Miejsce (opcjonalnie)</label>
+            <input type="text" id="exp-desc" placeholder="np. Szczepienia, Sprzęt, Pad Thai w Bangkoku">
+
+            <button onclick="addExpense()">Zapisz Wydatek w EUR</button>
+        </div>
+    </div>
+
+    <!-- SEKCJA: USTAWIENIA -->
+    <div id="tab-settings" style="display: none;">
+        <div class="card">
+            <h3>Konfiguracja Budżetu i Kursów</h3>
+            
+            <div class="grid-2">
+                <div>
+                    <label>Całkowita Pula (EUR)</label>
+                    <input type="number" id="total-pool-eur" value="8800" onchange="recalc()">
+                </div>
+                <div>
+                    <label>Liczba dni wyjazdu</label>
+                    <input type="number" id="trip-days" value="30" min="1" onchange="recalc()">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Kurs PLN do EUR (np. 4.35)</label>
+                    <input type="number" id="exchange-rate-pln" value="4.35" step="0.01" onchange="recalc()">
+                </div>
+                <div>
+                    <label>W przybliżeniu w PLN:</label>
+                    <input type="text" id="total-pool-pln-preview" disabled style="background:#0f172a; color:#38bdf8; font-weight:bold;">
+                </div>
+            </div>
+
+            <h4 style="margin-top: 15px;">Podział sztywnych pul dziennych (w EUR):</h4>
+            <div class="grid-3">
+                <div>
+                    <label>Jedzenie</label>
+                    <input type="number" id="b-food" value="2500" onchange="recalc()">
+                </div>
+                <div>
+                    <label>Hotele</label>
+                    <input type="number" id="b-hotel" value="3000" onchange="recalc()">
+                </div>
+                <div>
+                    <label>Atrakcje</label>
+                    <input type="number" id="b-fun" value="1000" onchange="recalc()">
+                </div>
+            </div>
+            <div class="helper-text">Pozostała część puli stanowi rezerwę na Transport oraz Inne wydatki płynne.</div>
+        </div>
+    </div>
+
+    <!-- SEKCJA: HISTORIA -->
+    <div id="tab-history" style="display: none;">
+        <div class="card">
+            <h3>Pełna Historia Wydatków</h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+
+<script>
+let state = JSON.parse(localStorage.getItem('travel_budget_eur_v3')) || {
+    totalPoolEur: 8800,
+    days: 30,
+    exchangeRatePln: 4.35,
+    budgets: { food: 2500, hotel: 3000, fun: 1000 },
+    expenses: []
+};
+
+function switchTab(tabName) {
+    document.getElementById('tab-dashboard').style.display = tabName === 'dashboard' ? 'block' : 'none';
+    document.getElementById('tab-settings').style.display = tabName === 'settings' ? 'block' : 'none';
+    document.getElementById('tab-history').style.display = tabName === 'history' ? 'block' : 'none';
+    
+    document.getElementById('btn-tab-dashboard').className = tabName === 'dashboard' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('btn-tab-settings').className = tabName === 'settings' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('btn-tab-history').className = tabName === 'history' ? 'tab-btn active' : 'tab-btn';
+}
+
+function save() {
+    localStorage.setItem('travel_budget_eur_v3', JSON.stringify(state));
+    recalc();
+}
+
+function toggleCurrencyFields() {
+    const curr = document.getElementById('exp-currency').value;
+    const eurInput = document.getElementById('exp-amount-eur');
+    const eurHelper = document.getElementById('eur-helper');
+    
+    if (curr === 'EUR') {
+        eurInput.value = document.getElementById('exp-amount-orig').value;
+        eurInput.disabled = true;
+        eurHelper.innerText = "Dla EUR kwota w EUR jest taka sama jak oryginalna.";
+    } else {
+        eurInput.disabled = false;
+        eurHelper.innerText = "Wpisz dokładny koszt w EUR z aplikacji Revolut lub wyliczony z kursu gotówki.";
+    }
+}
+
+function calcEurAuto() {
+    const curr = document.getElementById('exp-currency').value;
+    const orig = parseFloat(document.getElementById('exp-amount-orig').value) || 0;
+    if (curr === 'EUR') {
+        document.getElementById('exp-amount-eur').value = orig;
+    }
+}
+
+function recalc() {
+    state.totalPoolEur = parseFloat(document.getElementById('total-pool-eur').value) || 0;
+    state.days = parseInt(document.getElementById('trip-days').value) || 1;
+    state.exchangeRatePln = parseFloat(document.getElementById('exchange-rate-pln').value) || 4.35;
+    
+    state.budgets.food = parseFloat(document.getElementById('b-food').value) || 0;
+    state.budgets.hotel = parseFloat(document.getElementById('b-hotel').value) || 0;
+    state.budgets.fun = parseFloat(document.getElementById('b-fun').value) || 0;
+
+    document.getElementById('total-pool-pln-preview').value = (state.totalPoolEur * state.exchangeRatePln).toFixed(0) + " PLN";
+
+    // Obliczenia sumaryczne w EUR
+    const totalSpentEur = state.expenses.reduce((sum, e) => sum + e.amountEur, 0);
+    const totalLeftEur = state.totalPoolEur - totalSpentEur;
+    const totalPlnEquiv = totalSpentEur * state.exchangeRatePln;
+
+    document.getElementById('total-budget-disp').innerText = state.totalPoolEur.toFixed(2);
+    document.getElementById('total-spent-disp').innerText = totalSpentEur.toFixed(2);
+    document.getElementById('pln-equiv-disp').innerText = totalPlnEquiv.toFixed(0);
+    
+    const leftDisp = document.getElementById('total-left-disp');
+    leftDisp.innerText = `Pozostało: ${totalLeftEur.toFixed(2)} EUR (~${(totalLeftEur * state.exchangeRatePln).toFixed(0)} PLN)`;
+    leftDisp.style.color = totalLeftEur < 0 ? 'var(--danger)' : '#fff';
+
+    renderCategoryStats();
+    renderHistory();
+}
+
+function getCategoryStatus(catKey) {
+    const totalCatBudget = state.budgets[catKey];
+    const catExpenses = state.expenses.filter(e => e.cat === catKey);
+    const spentTotal = catExpenses.reduce((sum, e) => sum + e.amountEur, 0);
+    const leftTotal = totalCatBudget - spentTotal;
+
+    const baseDaily = totalCatBudget / state.days;
+    
+    // Filtrujemy dni > 0, żeby Dzień 0 (przed wyjazdem) nie zniekształcał licznika bieżącego dnia podróży
+    const tripDayExpenses = state.expenses.filter(e => e.day > 0);
+    const currentDay = Math.max(1, ...tripDayExpenses.map(e => e.day), 1);
+    document.getElementById('current-day-num').innerText = currentDay;
+
+    const daysRemaining = Math.max(1, state.days - currentDay + 1);
+    const adjustedDailyLimit = leftTotal / daysRemaining;
+
+    return {
+        totalBudget: totalCatBudget,
+        spentTotal: spentTotal,
+        leftTotal: leftTotal,
+        baseDaily: baseDaily,
+        adjustedDailyLimit: adjustedDailyLimit
+    };
+}
+
+function renderCategoryStats() {
+    const cats = [
+        { id: 'food', name: 'Jedzenie (stała pula)' },
+        { id: 'hotel', name: 'Hotele (stała pula)' },
+        { id: 'fun', name: 'Atrakcje (stała pula)' }
+    ];
+
+    let html = '';
+    cats.forEach(c => {
+        const stat = getCategoryStatus(c.id);
+        const diff = stat.adjustedDailyLimit - stat.baseDaily;
+        let badge = '';
+        
+        if (diff > 0.05) {
+            badge = `<span class="badge bg-success">+${diff.toFixed(2)} EUR (+${(diff * state.exchangeRatePln).toFixed(0)} zł)/dzień</span>`;
+        } else if (diff < -0.05) {
+            badge = `<span class="badge bg-danger">${diff.toFixed(2)} EUR (${(diff * state.exchangeRatePln).toFixed(0)} zł)/dzień</span>`;
+        }
+
+        const dailyPln = (stat.adjustedDailyLimit * state.exchangeRatePln).toFixed(0);
+        const leftPln = (stat.leftTotal * state.exchangeRatePln).toFixed(0);
+        const totalCatPln = (stat.totalBudget * state.exchangeRatePln).toFixed(0);
+
+        html += `
+            <div class="stat-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>${c.name}</strong>
+                    ${badge}
+                </div>
+                <div class="stat-val">
+                    ${stat.adjustedDailyLimit.toFixed(2)} EUR 
+                    <span class="pln-sub">(~${dailyPln} PLN)</span>
+                    <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">/ dziś</span>
+                </div>
+                <div class="stat-title">Z puli zostało: ${stat.leftTotal.toFixed(2)} EUR (~${leftPln} PLN) z ${stat.totalBudget.toFixed(2)} EUR (~${totalCatPln} PLN)</div>
+            </div>
+        `;
+    });
+
+    const transSpent = state.expenses.filter(e => e.cat === 'transport').reduce((sum, e) => sum + e.amountEur, 0);
+    const otherSpent = state.expenses.filter(e => e.cat === 'other').reduce((sum, e) => sum + e.amountEur, 0);
+
+    const transPln = (transSpent * state.exchangeRatePln).toFixed(0);
+    const otherPln = (otherSpent * state.exchangeRatePln).toFixed(0);
+
+    html += `
+        <div class="stat-box" style="border-left-color: var(--warning);">
+            <strong>Transport (koszt płynny z ogólnej puli)</strong>
+            <div class="stat-val">${transSpent.toFixed(2)} EUR <span class="pln-sub">(~${transPln} PLN)</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">wydane łącznie</span></div>
+        </div>
+        <div class="stat-box" style="border-left-color: #8b5cf6;">
+            <strong>Inne / Przed wyjazdem (koszt płynny z ogólnej puli)</strong>
+            <div class="stat-val">${otherSpent.toFixed(2)} EUR <span class="pln-sub">(~${otherPln} PLN)</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">wydane łącznie</span></div>
+        </div>
+    `;
+
+    document.getElementById('category-stats').innerHTML = html;
+}
+
+function addExpense() {
+    const cat = document.getElementById('exp-cat').value;
+    const dayInput = document.getElementById('exp-day').value;
+    const day = dayInput === '' ? 0 : parseInt(dayInput);
+    const currency = document.getElementById('exp-currency').value;
+    const amountOrig = parseFloat(document.getElementById('exp-amount-orig').value);
+    const amountEur = currency === 'EUR' ? amountOrig : parseFloat(document.getElementById('exp-amount-eur').value);
+    const desc = document.getElementById('exp-desc').value;
+
+    if (isNaN(amountOrig) || amountOrig <= 0) {
+        alert('Wpisz poprawną kwotę w walucie oryginalnej.');
+        return;
+    }
+    if (isNaN(amountEur) || amountEur <= 0) {
+        alert('Wpisz poprawny koszt w EUR.');
+        return;
+    }
+
+    state.expenses.push({
+        id: Date.now(),
+        cat: cat,
+        day: day,
+        currency: currency,
+        amountOrig: amountOrig,
+        amountEur: amountEur,
+        desc: desc || (day === 0 ? 'Wydatki przed wyjazdem' : `${currency} wydatek`)
+    });
+
+    document.getElementById('exp-amount-orig').value = '';
+    document.getElementById('exp-amount-eur').value = '';
+    document.getElementById('exp-desc').value = '';
+    document.getElementById('exp-currency').value = 'EUR';
+    toggleCurrencyFields();
+
+    save();
+}
+
+function deleteExpense(id) {
+    state.expenses = state.expenses.filter(e => e.id !== id);
+    save();
+}
+
+function renderHistory() {
+    const catNames = { food: 'Jedzenie', hotel: 'Hotele', transport: 'Transport', fun: 'Atrakcje', other: 'Inne / Przed wyjazdem' };
+    const container = document.getElementById('history-list');
+    
+    if (state.expenses.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:15px;">Brak wpisanych wydatków w historii.</div>';
+        return;
+    }
+
+    let html = '';
+    [...state.expenses].reverse().forEach(e => {
+        const eurPln = (e.amountEur * state.exchangeRatePln).toFixed(0);
+        const dayLabel = e.day === 0 ? '<span style="color:#f59e0b; font-weight:bold;">Dzień 0 (Przed wyjazdem)</span>' : `Dzień ${e.day}`;
+        
+        html += `
+            <div class="history-item">
+                <div>
+                    <strong>${dayLabel} • ${catNames[e.cat]}</strong> ${e.desc ? `(${e.desc})` : ''}<br>
+                    <small style="color:var(--text-muted);">${e.amountOrig} ${e.currency} &rarr; <span style="color:#38bdf8; font-weight:bold;">${e.amountEur.toFixed(2)} EUR (~${eurPln} PLN)</span></small>
+                </div>
+                <button class="btn-del" onclick="deleteExpense(${e.id})">Usuń</button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// Inicjalizacja pól z pamięci
+document.getElementById('total-pool-eur').value = state.totalPoolEur;
+document.getElementById('trip-days').value = state.days;
+document.getElementById('exchange-rate-pln').value = state.exchangeRatePln;
+document.getElementById('b-food').value = state.budgets.food;
+document.getElementById('b-hotel').value = state.budgets.hotel;
+document.getElementById('b-fun').value = state.budgets.fun;
+
+toggleCurrencyFields();
+recalc();
+</script>
+</body>
+</html>
