@@ -100,7 +100,7 @@
                         <option value="THB">THB (Tajlandia)</option>
                         <option value="VND">VND (Wietnam)</option>
                         <option value="USD">USD ($)</option>
-                        <option value="IDR">IDR (Indonezja)</option>
+                        <option value="PHP">PHP (Filipiny)</option>
                         <option value="LAK">LAK (Laos)</option>
                         <option value="KHR">KHR (Kambodża)</option>
                     </select>
@@ -138,7 +138,7 @@
                 </div>
                 <div>
                     <label>Liczba dni wyjazdu</label>
-                    <input type="number" id="trip-days" value="30" min="1" onchange="recalc()">
+                    <input type="number" id="trip-days" value="180" min="1" onchange="recalc()">
                 </div>
             </div>
 
@@ -181,9 +181,9 @@
     </div>
 
 <script>
-let state = JSON.parse(localStorage.getItem('travel_budget_eur_v3')) || {
+let state = JSON.parse(localStorage.getItem('travel_budget_eur_v4')) || {
     totalPoolEur: 8800,
-    days: 30,
+    days: 180,
     exchangeRatePln: 4.35,
     budgets: { food: 2500, hotel: 3000, fun: 1000 },
     expenses: []
@@ -200,7 +200,7 @@ function switchTab(tabName) {
 }
 
 function save() {
-    localStorage.setItem('travel_budget_eur_v3', JSON.stringify(state));
+    localStorage.setItem('travel_budget_eur_v4', JSON.stringify(state));
     recalc();
 }
 
